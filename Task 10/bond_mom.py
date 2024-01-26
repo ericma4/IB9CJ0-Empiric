@@ -1,3 +1,24 @@
+##########################################
+# Calculate Bond Momentum                #
+# Jianxin Ma                             #
+# Email: jianxin.ma@warwick.ac.uk        #
+# Date: January 2024                     #
+##########################################
+
+'''
+Overview
+-------------
+This Python script calculate the bond momentum
+ 
+Requirements
+-------------
+The input data is 'trace_2002_2023.h5', which is replicated from DMR(2023)
+
+Package versions 
+-------------
+pandas v2.2.0
+'''
+
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
@@ -44,7 +65,7 @@ data['mom'] = mom(1, 6, data)
 data = data[~data['mom'].isnull()]
 
 # Calculate quantile
-data['momQ'] = data.groupby(by='date')['mom'].progress_apply(lambda x: pd.qcut(x,10,labels=False,duplicates='drop')+1)
+data['momQ'] = data.groupby(by='date', as_index=False, group_keys=False)['mom'].progress_apply(lambda x: pd.qcut(x,10,labels=False,duplicates='drop')+1)
 
 # Sorting portfolios    
 sorts = data.groupby(['date','momQ'])['exretn_t+1'].progress_apply(lambda x: np.mean(x)).to_frame()
@@ -62,7 +83,7 @@ sorts['const'] = 1
 count = 0
 for i in range(11):
     results = sm.OLS(sorts.iloc[:, i], sorts['const']).fit(cov_type='HAC',cov_kwds={'maxlags':12})
-    t_stat = results.tvalues[0]
+    t_stat = results.tvalues.iloc[0]
     Table_mom.iloc[count, 1] = t_stat.round(2)
     count += 1
 
